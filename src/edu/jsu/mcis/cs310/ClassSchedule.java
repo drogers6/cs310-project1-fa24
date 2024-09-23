@@ -12,6 +12,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
  
 
 
@@ -56,23 +60,22 @@ public class ClassSchedule {
         Iterator<String[]> iterator = csv.iterator();
         String[] headerRow = iterator.next();
         
-        JsonObject jsonData = new JsonObject();
         
-        JsonObject scheduletype = new JsonObject();
-        JsonObject subject = new JsonObject();
+        LinkedHashMap<String, Object> jsonData = new LinkedHashMap<>();
+        LinkedHashMap<String, Object> scheduletype = new LinkedHashMap<>();
+        LinkedHashMap<String, Object> subject = new LinkedHashMap<>();
         JsonObject course = new JsonObject();
-        //JsonObject section_objects = new JsonObject();
         JsonObject sections = new JsonObject();
         JsonArray section = new JsonArray();
         
         while (iterator.hasNext()) {
             
             String[] csvRow = iterator.next();
-            
+             //-----------------subjectid-----------------
             String subjectid = (csvRow[CSV_NUM_COLUMN].split(" "))[0];
             
             subject.put(subjectid, csvRow[CSV_SUBJECT_COLUMN]);
-            
+            //-----------------schedule-----------------
             String schedule = (csvRow[CSV_TYPE_COLUMN].split(" "))[0];
            
             scheduletype.put(schedule, csvRow[CSV_SCHEDULE_COLUMN]);
@@ -94,7 +97,7 @@ public class ClassSchedule {
             //-----------------section-----------------
             String CRN = (csvRow[CSV_CRN_COLUMN]);
             LinkedHashMap<String, Object> section_objects = new LinkedHashMap<>();
-            section_objects.put("crn",Integer.parseInt(CRN));//Integer.parseInt
+            section_objects.put("crn",Integer.parseInt(CRN));
             String section_words = (csvRow[CSV_NUM_COLUMN].split(" "))[0];
             String section_num = (csvRow[CSV_NUM_COLUMN].split(" "))[1];
             section_objects.put("subjectid",section_words);
@@ -106,28 +109,20 @@ public class ClassSchedule {
             section_objects.put("days",csvRow[CSV_DAYS_COLUMN]);
             section_objects.put("where",csvRow[CSV_WHERE_COLUMN]);
             
-            //for loop for instructors
+            
             JsonArray instructor = new JsonArray();
             instructor.add(csvRow[CSV_INSTRUCTOR_COLUMN]);
             String instructors_conatiner[] = new String[instructor.size()];
             
+            //for loop for instructors
             for (int i = 0; i < instructor.size(); i++) {
-            instructors_conatiner[i] = instructor.getString(i);
-            }
-            
-            for (String value : instructors_conatiner) {
-            JsonArray instructors_conatiner2 = new JsonArray(); //container 2 holds value and puts it into an array
-            instructors_conatiner2.add(value);
-            section_objects.put("instuctor",instructors_conatiner2);
-            }
-            
-            section.add(section_objects);
-            
+            instructors_conatiner[i] = instructor.getString(i).replaceAll("^\\s+", "");// container to store instructors
           
-            
-            
-           
-
+            section_objects.put("instuctor",instructors_conatiner[i].split(","));// seperate instructors with comma
+            }
+          
+            section.add(section_objects);
+      
         }
         
         jsonData.put("scheduletype", scheduletype);
@@ -140,8 +135,33 @@ public class ClassSchedule {
     }
     
     public String convertJsonToCsvString(JsonObject json) {
+       
+        StringWriter stringWriter = new StringWriter();
+
+        CSVWriter csvWriter = new CSVWriter(stringWriter);
+            
+        String jsonString = json.toString();
+
+        jsonString = jsonString.trim().replaceAll("[{}]", "");
+        String[] entries = jsonString.split(",\\s*");
+
+        String[] headers = {CRN_COL_HEADER, SUBJECT_COL_HEADER, NUM_COL_HEADER,DESCRIPTION_COL_HEADER,SECTION_COL_HEADER,TYPE_COL_HEADER,CREDITS_COL_HEADER,START_COL_HEADER,END_COL_HEADER,DAYS_COL_HEADER,WHERE_COL_HEADER,SCHEDULE_COL_HEADER,INSTRUCTOR_COL_HEADER,SUBJECTID_COL_HEADER};
+        //String[] headers = new String[entries.length];
+        String[] values = new String[entries.length];
+
+            for (int i = 0; i < entries.length; i++) {
+                // store the values
+                String[] keyValue = entries[i].split(":");
+                headers[i] = keyValue[0].replaceAll("\"", "").trim(); 
+                values[i] = keyValue[1].replaceAll("\"", "").trim();  
+            }
+
+            
+        csvWriter.writeNext(headers);
+        csvWriter.writeNext(values);
+            
         
-        return ""; // remove this!
+        return csvWriter.toString(); 
         
     }
     
