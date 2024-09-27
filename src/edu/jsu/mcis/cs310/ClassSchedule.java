@@ -44,8 +44,8 @@ public class ClassSchedule {
     private final int CSV_SUBJECT_COLUMN = 1;
     private final int CSV_NUM_COLUMN = 2;
     private final int CSV_DESCRIPTION_COLUMN = 3;
-     private final int CSV_SECTION_COLUMN = 4;
-     private final int CSV_TYPE_COLUMN = 5;
+    private final int CSV_SECTION_COLUMN = 4;
+    private final int CSV_TYPE_COLUMN = 5;
     private final int CSV_CREDITS_COLUMN = 6;
     private final int CSV_START_COLUMN = 7;
     private final int CSV_END_COLUMN = 8;
@@ -136,45 +136,76 @@ public class ClassSchedule {
     public String convertJsonToCsvString(JsonObject json) {
        
         JsonObject jsondata = new JsonObject(json);
-        JsonObject schedule = (JsonObject)jsondata.get("scheduletype");
-        JsonObject subjects = (JsonObject)jsondata.get("subject");
-        JsonObject courses = (JsonObject)jsondata.get("course");
-        JsonArray section = (JsonArray)jsondata.get("section");
-        
-        String[] headers = {CRN_COL_HEADER, SUBJECT_COL_HEADER, NUM_COL_HEADER, DESCRIPTION_COL_HEADER, SECTION_COL_HEADER, TYPE_COL_HEADER, CREDITS_COL_HEADER, START_COL_HEADER, END_COL_HEADER, DAYS_COL_HEADER, WHERE_COL_HEADER, SCHEDULE_COL_HEADER, INSTRUCTOR_COL_HEADER};
-        
-        List <String[]> rows = new ArrayList <>();
+
+        JsonObject schedule = (JsonObject) jsondata.get("scheduletype");
+        JsonObject subjects = (JsonObject) jsondata.get("subject");
+        JsonObject courses = (JsonObject) jsondata.get("course");
+        JsonArray section = (JsonArray) jsondata.get("section");
+
+        List<String[]> rows = new ArrayList<>();
+
+        String[] headers = {
+            CRN_COL_HEADER, 
+            SUBJECT_COL_HEADER, 
+            NUM_COL_HEADER, 
+            DESCRIPTION_COL_HEADER,
+            SECTION_COL_HEADER, 
+            TYPE_COL_HEADER, 
+            CREDITS_COL_HEADER, 
+            START_COL_HEADER,
+            END_COL_HEADER, 
+            DAYS_COL_HEADER, 
+            WHERE_COL_HEADER, 
+            SCHEDULE_COL_HEADER, 
+            INSTRUCTOR_COL_HEADER
+        };
         
         rows.add(headers);
-        
-        for (int i = 0; i < section.size(); i++){
-            //instructors
-            JsonObject Data = (JsonObject)section.get(i);
-            JsonArray getInstructors = (JsonArray)Data.get(INSTRUCTOR_COL_HEADER);
-            String[] instructors_container = getInstructors.toArray(new String[0]);
-            String instructors = String.join(",", instructors_container);
+
+        // FOR LOOP FOR SECTIONS
+        for (int i = 0; i < section.size(); i++) {
+              //instructors
+            JsonObject currentSection = (JsonObject) section.get(i);
+            JsonArray instructorArray = (JsonArray) currentSection.get(INSTRUCTOR_COL_HEADER);
+            String[] instructorNames = instructorArray.toArray(new String[0]);
+            String instructors = String.join(", ", instructorNames);
+
             //course
-            HashMap getCourse = (HashMap)courses.get((Data.get(SUBJECTID_COL_HEADER)+ "" + Data.get(NUM_COL_HEADER)));
-            //JsonObject getCourse = (JsonObject)courses.get((Data.get(SUBJECTID_COL_HEADER)+ "" + Data.get(NUM_COL_HEADER)));
-            //
-            String[]lineArray = {Data.get(CRN_COL_HEADER).toString(),subjects.get(Data.get(SUBJECTID_COL_HEADER)).toString(),
-            (Data.get(SUBJECTID_COL_HEADER)+""+ Data.get(NUM_COL_HEADER)),getCourse.get(DESCRIPTION_COL_HEADER).toString(),
-            Data.get(SECTION_COL_HEADER).toString(),Data.get(TYPE_COL_HEADER).toString(),getCourse.get(CREDITS_COL_HEADER).toString(),
-            Data.get(START_COL_HEADER).toString(),Data.get(END_COL_HEADER).toString(),
-            Data.get(DAYS_COL_HEADER).toString(),Data.get(WHERE_COL_HEADER).toString(),
-            schedule.get(Data.get(TYPE_COL_HEADER).toString()).toString(),instructors};
+            HashMap courseDetails = (HashMap) courses.get(
+            currentSection.get(SUBJECTID_COL_HEADER) + " " + currentSection.get(NUM_COL_HEADER)
+            );
+
+            // Populate rows
+            String[] lineArray  = {
+                currentSection.get(CRN_COL_HEADER).toString(),
+                subjects.get(currentSection.get(SUBJECTID_COL_HEADER)).toString(),
+                (currentSection.get(SUBJECTID_COL_HEADER) + " " + currentSection.get(NUM_COL_HEADER)),
+                courseDetails.get(DESCRIPTION_COL_HEADER).toString(),
+                currentSection.get(SECTION_COL_HEADER).toString(),
+                currentSection.get(TYPE_COL_HEADER).toString(),
+                courseDetails.get(CREDITS_COL_HEADER).toString(),
+                currentSection.get(START_COL_HEADER).toString(),
+                currentSection.get(END_COL_HEADER).toString(),
+                currentSection.get(DAYS_COL_HEADER).toString(),
+                currentSection.get(WHERE_COL_HEADER).toString(),
+                schedule.get(currentSection.get(TYPE_COL_HEADER).toString()).toString(),
+                instructors
+            };
+
             
-            rows.add(lineArray);
+            rows.add(lineArray );
         }
+
+       
         StringWriter stringWriter = new StringWriter();
 
         CSVWriter csvWriter = new CSVWriter(stringWriter, '\t', '"', '\\', "\n");
-        
+
         csvWriter.writeAll(rows);
-        //stringWriter
-                
-        return stringWriter.toString(); 
-        
+
+        return stringWriter.toString();
+
+       
     }
     
     public JsonObject getJson() {
